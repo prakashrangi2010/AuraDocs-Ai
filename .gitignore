@@ -9,3 +9,5 @@ env/
 db.sqlite3
 *.7z
 .DS_Store
+chroma_db/
+backend/chroma_db/

@@ -8,9 +8,106 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 from api.models import Book
+from api import services
 
 def seed_books():
     books = [
+        {
+            "title": "Pride and Prejudice",
+            "author": "Jane Austen",
+            "rating": "4.9",
+            "description": "A classic romantic masterpiece following Elizabeth Bennet as she deals with issues of manners, upbringing, morality, education, and marriage in the landed gentry of early 19th-century England.",
+            "url": "https://www.gutenberg.org/ebooks/1342",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg"
+        },
+        {
+            "title": "Frankenstein",
+            "author": "Mary Shelley",
+            "rating": "4.8",
+            "description": "The seminal gothic science fiction novel telling the tragic story of Victor Frankenstein, a young scientist who creates a sapient creature in an unorthodox scientific experiment.",
+            "url": "https://www.gutenberg.org/ebooks/84",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/84/pg84.cover.medium.jpg"
+        },
+        {
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald",
+            "rating": "4.7",
+            "description": "Set in the Jazz Age on Long Island, the novel depicts narrator Nick Carraway's interactions with mysterious millionaire Jay Gatsby and Gatsby's obsession to reunite with his former lover, Daisy Buchanan.",
+            "url": "https://www.gutenberg.org/ebooks/64317",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/64317/pg64317.cover.medium.jpg"
+        },
+        {
+            "title": "Dracula",
+            "author": "Bram Stoker",
+            "rating": "4.8",
+            "description": "An epistolary vampire novel chronicling Count Dracula's attempt to move from Transylvania to England so that he may find new blood and spread the undead curse.",
+            "url": "https://www.gutenberg.org/ebooks/345",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/345/pg345.cover.medium.jpg"
+        },
+        {
+            "title": "The Adventures of Sherlock Holmes",
+            "author": "Arthur Conan Doyle",
+            "rating": "4.9",
+            "description": "A collection of twelve detective stories featuring the brilliant consulting detective Sherlock Holmes and his loyal companion Dr. John H. Watson.",
+            "url": "https://www.gutenberg.org/ebooks/1661",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/1661/pg1661.cover.medium.jpg"
+        },
+        {
+            "title": "Alice's Adventures in Wonderland",
+            "author": "Lewis Carroll",
+            "rating": "4.6",
+            "description": "A fantastical tale of a young girl named Alice who falls through a rabbit hole into a subterranean fantasy world populated by peculiar, anthropomorphic creatures.",
+            "url": "https://www.gutenberg.org/ebooks/11",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/11/pg11.cover.medium.jpg"
+        },
+        {
+            "title": "The Art of War",
+            "author": "Sun Tzu",
+            "rating": "4.9",
+            "description": "An ancient Chinese military treatise attributed to Sun Tzu. Composed of 13 chapters, each is devoted to one aspect of warfare and strategic philosophy.",
+            "url": "https://www.gutenberg.org/ebooks/17405",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/17405/pg17405.cover.medium.jpg"
+        },
+        {
+            "title": "Moby-Dick; or, The Whale",
+            "author": "Herman Melville",
+            "rating": "4.5",
+            "description": "The epic sailor Ishmael's narrative of the obsessive quest of Ahab, captain of the whaling ship Pequod, for revenge on Moby Dick, the giant white sperm whale.",
+            "url": "https://www.gutenberg.org/ebooks/2701",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/2701/pg2701.cover.medium.jpg"
+        },
+        {
+            "title": "The Prince",
+            "author": "Niccolò Machiavelli",
+            "rating": "4.6",
+            "description": "A 16th-century political treatise offering pragmatic and controversial instruction to rulers on acquisition and maintenance of political power.",
+            "url": "https://www.gutenberg.org/ebooks/1232",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/1232/pg1232.cover.medium.jpg"
+        },
+        {
+            "title": "Metamorphosis",
+            "author": "Franz Kafka",
+            "rating": "4.7",
+            "description": "The tragic novella of salesman Gregor Samsa, who wakes up one morning to find himself inexplicably transformed into a monstrous insectoid creature.",
+            "url": "https://www.gutenberg.org/ebooks/5200",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/5200/pg5200.cover.medium.jpg"
+        },
+        {
+            "title": "A Tale of Two Cities",
+            "author": "Charles Dickens",
+            "rating": "4.8",
+            "description": "Set in London and Paris before and during the French Revolution, depicting the plight of the French peasantry under the demoralizing tyranny of the aristocracy.",
+            "url": "https://www.gutenberg.org/ebooks/98",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/98/pg98.cover.medium.jpg"
+        },
+        {
+            "title": "The Picture of Dorian Gray",
+            "author": "Oscar Wilde",
+            "rating": "4.8",
+            "description": "A philosophical novel about a young man named Dorian Gray whose portrait ages and reflects his sins while he maintains eternal youth and beauty.",
+            "url": "https://www.gutenberg.org/ebooks/174",
+            "cover_image_url": "https://www.gutenberg.org/cache/epub/174/pg174.cover.medium.jpg"
+        },
         {
             "title": "The Quantum Labyrinth",
             "author": "Dr. Aris Vance",
@@ -45,15 +142,24 @@ def seed_books():
         }
     ]
 
+    count = 0
     for book_data in books:
         book, created = Book.objects.get_or_create(
             title=book_data['title'],
             defaults=book_data
         )
+        # Always make sure it is indexed in RAG
+        text_to_embed = f"Title: {book.title}\nAuthor: {book.author}\nDescription: {book.description}"
+        services.add_to_rag(book.id, text_to_embed, metadata={"title": book.title, "author": book.author})
+        
         if created:
-            print(f"Created: {book.title}")
-        else:
-            print(f"Already exists: {book.title}")
+            count += 1
+            print(f"Seeded new book & RAG vectors: {book.title}")
+
+    return count
 
 if __name__ == '__main__':
-    seed_books()
+    created_count = seed_books()
+    print(f"Done! Seeded {created_count} new books into Django DB and Supabase.")
+
+
